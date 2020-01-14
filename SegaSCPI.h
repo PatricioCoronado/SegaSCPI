@@ -98,19 +98,18 @@ class SegaSCPI
 public:
     //Variables y objetos públicas
       char *FinComando;// Puntero al final del comando para leer parámetros
-      HardwareSerial /*USARTClass*/ *PuertoActual;
-      String nombreSistema;//Para que scpi pueda enviar al Pc el nombre del sistema
+      HardwareSerial *PuertoActual;//Puerto Serie
     //Métodos públicos
-      void begin(tipoNivel *,String *,String *);//Inicializa scpi
-      void begin(tipoNivel *,String *);//Inicializa scpi
-      void begin(tipoNivel *);//Inicializa scpi
+      SegaSCPI(tipoNivel *pRaiz ,const char*,String*); //Constructor
       void scpi(/*USARTClass**/ HardwareSerial* );//Función de entrada a SegaSCPI
       void errorscpi(int); //Gestióna la pila de números de error 
       int actualizaVarEntera(int *,int,int);//Actualiza variable entero
       int actualizaVarDiscreta(int *,int*,int);//Actualiza entero discreta
       int actualizaVarBooleana(bool *);//Actualiza Booleano
       int actualizaVarDecimal(double *,double,double);//Actualiza decimal
+      void enviarNombreDelSistema(void);
 private://Variables privadas  
+      char * nombreDelSistema;
       int lonPila=PROFUNDIDAD_PILA_ERR;//Tamaño de la pila de números de error
       PilaErrorores pilaErrores;//Pila de números de error
       String codigosError[STRINGS_ERRORES_SCPI];//Array de strings con la explicación de los errores de scpi
@@ -122,15 +121,15 @@ private://Variables privadas
       int locCom; // Cantidad de caracteres en el buffer
       unsigned char indComRd;// = 0;
     //Métodos privados
+      void inicializaSCPI(tipoNivel*);
       char lee_caracter(void);
       unsigned char separador(char);
       unsigned char valido(char);
       char CaracterBueno(char);
       void LeeComandos(char *cadena);
-      //String* codigosError;//Para generarlo dinámcicamente
 };
 /***********************************************************************
-			        MACROS
+			        macros para definir menús
 ************************************************************************/      
 // Para definir submenús 
 #define SCPI_SUBMENU(X,Y) sizeof(X)/sizeof(*X), #X,#Y,NULL,X,  
@@ -139,9 +138,5 @@ private://Variables privadas
 //Para definir el nivel raiz de comandos
 #define SCPI_RAIZ {sizeof(NivelDos)/sizeof(*NivelDos),"","",NULL,NivelDos}; 
 #define MENU_SCPI tipoNivel NivelDos[]= 
-/************************************************************************
- Macros para leer y escribir el pueto serie actual
-************************************************************************/
-
-/****************************************************************************/
+/************************************************************************/
 #endif 

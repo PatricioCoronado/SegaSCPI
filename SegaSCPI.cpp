@@ -31,6 +31,7 @@ void PilaErrorores::begin(uint8_t maxIn)//Constructor
 		//Crea la pila "arrayErrores" y la apunta con *arrayErrores
 		if (maxIndice > MIN_INDICE && maxIndice < MAX_INDICE)
 		{
+
 			arrayErrores = new int[maxIn];
 			this->maxIndice = maxIn;//Determina la profundidad de la pila
 		}
@@ -38,12 +39,10 @@ void PilaErrorores::begin(uint8_t maxIn)//Constructor
 		{
 			arrayErrores = new int[MAX_INDICE];
 			this->maxIndice = MAX_INDICE;//Determina la profundidad de la pila
-
 		}
 		for (this->indice = 0; this->indice < this->maxIndice; this->indice++)
 			arrayErrores[this->indice] = 0;//Toda la pila sin error 
 		this->indice = 0;
-    
 }
 /*************************************************************************
    * Error
@@ -78,31 +77,30 @@ int PilaErrorores::error(int codigo)
 /****************************************************************************
 	Fin de funciones de PilaCodigoErrores
 *****************************************************************************/
-/*****************************************************************************
-	Funcion publica: inicializa scpi 3 sobrecargas
+/**********************************************************************
+	Funcion publica: constructor
   1º Inicializa el puntero al nivel Raiz de menús.
   2º Además inicializa el nombre del sistema.
-  3º Además inicializa la pila de errores de usuario
-***************************************************************************/
- void SegaSCPI::begin(tipoNivel *pRaiz)
+  3º E inicializa la pila de errores de usuario
+***********************************************************************/
+ SegaSCPI::SegaSCPI(tipoNivel *pRaiz ,const char* nombre,String* errUsuario)
  {
-  Raiz=pRaiz;  
-  nombreSistema="";  
-  this->codigosError[0]="";
-  erroresDelUsuario=NULL;
+  inicializaSCPI(pRaiz);
+  nombreDelSistema=new char[strlen(nombre)+1];
+  strcpy(nombreDelSistema,nombre);
+  //
+  erroresDelUsuario = errUsuario;
  }
-void SegaSCPI::begin(tipoNivel *pRaiz ,String *nombre)
- {
+/**********************************************************************
+ * Hace la inicialización obligatoria:
+ * Apunta el puntero del menú raiz 
+ * Rellena la lista de códigos de error
+ * Crea la pila de errores
+
+**********************************************************************/ 
+void SegaSCPI::inicializaSCPI(tipoNivel *pRaiz)
+{  
   Raiz=pRaiz; 
-  nombreSistema=*nombre;
-  erroresDelUsuario=NULL;
-  }
-void SegaSCPI::begin(tipoNivel *pRaiz ,String *nombre,String* errUsuario)//Inicializa la pila
-{
-//  codigosError = new String[12]; //Para generarlo dinámicamente
-  nombreSistema=*nombre;
-  Raiz=pRaiz; 
-  this->pilaErrores.begin(PROFUNDIDAD_PILA_ERR);
   this->codigosError[0]="0 no hay errores";
   this->codigosError[1]="1 Caracter no valido";
   this->codigosError[2]="2 Comando desconocido";
@@ -110,9 +108,18 @@ void SegaSCPI::begin(tipoNivel *pRaiz ,String *nombre,String* errUsuario)//Inici
   this->codigosError[4]="4 Parametro inexistente";
   this->codigosError[5]="5 Formato de parametro no valido";
   this->codigosError[6]="6 Parametro fuera de rango";
-  erroresDelUsuario = errUsuario; //Erroes del usuario
- }
-/*****************************************************************************
+  this->pilaErrores.begin(PROFUNDIDAD_PILA_ERR);
+}
+/**********************************************************************
+* Envía el nombre del sistema por el puerto serie
+* Solo aquí se utiliza nombreDelSistema   
+**********************************************************************/
+void SegaSCPI::enviarNombreDelSistema(void)
+{
+   if(!nombreDelSistema) return; // Si no se asigna nombre sale
+   PuertoActual->println(nombreDelSistema);
+}
+ /*****************************************************************************
 	Función pública: 	
   Función de entrada a SegaSCPI. Se la llama con un puntero a tipo Hardwareseria
   que apunta al puerto serial que se está utilizando. Lee el buffer del serial
@@ -199,25 +206,24 @@ void SegaSCPI::begin(tipoNivel *pRaiz ,String *nombre,String* errUsuario)//Inici
   else errorscpi(2);     // Si ya estaba en el raiz el comando no existe
 }
 /***********************************************************************
-  Función pública: Gestiona la pila de errores de segainvex_scpi_Serial
+  Función pública: Gestiona la pila de errores de SegaSCPI
 *************************************************************************/
  void SegaSCPI::errorscpi(int numError) 
  {
 	int numeroDevuelto;
-	if (numError < -1) return;// número bueno es -1 , 0, 1, 2,...
+  if (numError < -1) return;// número bueno es -1 , 0, 1, 2,...
 	numeroDevuelto = pilaErrores.error(numError);//Lee el número de error
 	if (numeroDevuelto != -1) 
    {
       if(numeroDevuelto<=STRINGS_ERRORES_SCPI-1)
       { //Errores propios del sistema SCPI
-        if (codigosError[numeroDevuelto].length()<=MAX_LONG_STRING_ERR)
         PuertoActual->println(codigosError[numeroDevuelto]);
-        else PuertoActual->println("error indeterminado");
       }
       else 
-      { //Errores de usuario. Hay que comprobar que existen errores de usuario
-        if ( erroresDelUsuario!=NULL && erroresDelUsuario[numeroDevuelto-STRINGS_ERRORES_SCPI].length()<=MAX_LONG_STRING_ERR)
-        PuertoActual->println(erroresDelUsuario[numeroDevuelto-STRINGS_ERRORES_SCPI]);
+      { //Errores de usuario
+        if (erroresDelUsuario!=NULL)//Si hay errores de usuario
+        //No imprime más de MAX_LONG_STRING_ERR caracteres por seguridad
+        PuertoActual->println(erroresDelUsuario[numeroDevuelto-STRINGS_ERRORES_SCPI].substring(0,MAX_LONG_STRING_ERR));
         else PuertoActual->println("error indeterminado");
       }
    }
@@ -225,14 +231,16 @@ void SegaSCPI::begin(tipoNivel *pRaiz ,String *nombre,String* errUsuario)//Inici
 /***********************************************************************
   Función privada: Busca un caracter separador : ; \n \r
 ************************************************************************/
- unsigned char SegaSCPI::separador(char a) {
+ unsigned char SegaSCPI::separador(char a) 
+ {
   if (a == ':' || a == ';' || a == '\n' || a == '\r') return (1);
   return (0);
 }
 /**************************************************************************
   Función privada: Busca otros caracteres válidos . ? * - + '
 ***************************************************************************/
- unsigned char SegaSCPI::valido(char a) {
+ unsigned char SegaSCPI::valido(char a) 
+ {
   if (a == '?' || a == '.' ||  a == '*'  || a == '-' || a == '+' || a == ',' ) return (1);
   return (0);
 }
@@ -240,7 +248,8 @@ void SegaSCPI::begin(tipoNivel *pRaiz ,String *nombre,String* errUsuario)//Inici
   Función privada: Verifica si el carácter es válido.
    (alfanamerico, separador ó puntuación)
 ***************************************************************************/
- char SegaSCPI::CaracterBueno(char caracter) {
+ char SegaSCPI::CaracterBueno(char caracter) 
+ {
   if (!isalnum(caracter))       //Si no es alfanumerico...
     if (!isspace(caracter))    // ni un espacio...
       if (!separador(caracter)) // ni un separador admitido...
@@ -251,7 +260,8 @@ void SegaSCPI::begin(tipoNivel *pRaiz ,String *nombre,String* errUsuario)//Inici
 /***************************************************************************
     Función privada: Lee caracteres del buffer buffCom[]
 **************************************************************************/
- char SegaSCPI::lee_caracter()  {
+ char SegaSCPI::lee_caracter()  
+ {
   unsigned char carRecv;
   if (locCom == 0) return (0x00); //Si no hay caracteres en buffer salimos con caracter nulo 0
   carRecv = buffCom[indComRd];  //Si lo hay,leemos el "char" correspondiente del buffer
