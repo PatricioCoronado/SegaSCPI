@@ -4,7 +4,10 @@
  un PC con Arduino a través del puerto serie "Serial" 
 **********************************************************************/
 #include <Arduino.h>
-#include <SegaSCPI.h>
+# include "SegaSCPI.h"
+// LA librería debe estar aquí o cambiar el path al de la librería
+//# include "C:\Users\PACOCO\Mis Proyectos\SegaSCPI\SegaSCPI.h"
+//# include "C:\Users\PACOCO\Mis Proyectos\SegaSCPI\SegaSCPI.cpp"
 /**********************************************************************
 Prototipos de funciones
 ***********************************************************************/
@@ -59,21 +62,23 @@ tipoNivel Raiz[]= SCPI_RAIZ //// Declaración OBLIGATORIA del nivel Raiz. Siempr
 /**********************************************************************
  		errores del sistema definidos por el usuario
 **********************************************************************/
+
 String misErrores[]=
 {//Los errores de 0 a 6 son de scpi
 	"7 la variable 1 no se ha cambiado",
 	"8 la variable 2 no se ha cambiado",
 	"9 otro error",
+	"10 y otro error",
+
 };
 //Ahora el código habitual de Arduino:
-SegaSCPI segaScpi;//Instanciamos el objeto SCPI
+SegaSCPI segaScpi(Raiz,"Nombre de mi sistema",misErrores);//Instanciamos el objeto SCPI	global
 /**********************************************************************
  					setup
 **********************************************************************/
 void setup() 
 {
-	String nombreSistema="Ejemplo de uso de la libreria SegaSCPI V1.0";//Opcionalmente podemos dar un nombre a nuestro sistema
-	segaScpi.begin(Raiz, &nombreSistema,misErrores);//Inicializamos 
+	//segaScpi.begin(Raiz, &nombreSistema,misErrores);//Inicializamos 
 	// Abre el puerto serie
 	Serial.begin(115200); 
 	Serial1.begin(115200);
@@ -103,6 +108,17 @@ void funcion1(void)
 {
  segaScpi.PuertoActual->println
  ("Se ha recibido el COMANDO1 y se ha ejecutado la funcion funcion1");	
+ 	segaScpi.errorscpi(3);
+ 	segaScpi.errorscpi(4);
+	segaScpi.errorscpi(5);
+ 	segaScpi.errorscpi(6);
+ 	segaScpi.errorscpi(7);
+ 	segaScpi.errorscpi(11);
+ 	segaScpi.errorscpi(12);
+	segaScpi.errorscpi(13);
+ 	segaScpi.errorscpi(14);
+	segaScpi.errorscpi(15);	 
+	segaScpi.errorscpi(16);	 	
 }
 /****************************************************************
 	ComandoCOMANDO2 ó C2
@@ -175,7 +191,7 @@ void errorSCPI(void){segaScpi.errorscpi(0);}
   Función del Comando: *IDN"
    Envia por el puerto una cadena que identifica al sistema
  *************************************************************************/
-void idnSCPI(void){segaScpi.PuertoActual->println(segaScpi.nombreSistema);}	
+void idnSCPI(void){segaScpi.enviarNombreDelSistema();}
  /************************************************************************
   Función del Comando:*OPC
   Envia por el puerto el carácter uno
