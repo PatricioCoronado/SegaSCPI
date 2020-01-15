@@ -108,17 +108,17 @@ void funcion1(void)
 {
  segaScpi.PuertoActual->println
  ("Se ha recibido el COMANDO1 y se ha ejecutado la funcion funcion1");	
+// Ponemos unos errores en la pila para pedirlos con el comando err?
+	segaScpi.errorscpi(1);
+	segaScpi.errorscpi(2);
  	segaScpi.errorscpi(3);
- 	segaScpi.errorscpi(4);
+	segaScpi.errorscpi(4);
 	segaScpi.errorscpi(5);
- 	segaScpi.errorscpi(6);
- 	segaScpi.errorscpi(7);
- 	segaScpi.errorscpi(11);
- 	segaScpi.errorscpi(12);
-	segaScpi.errorscpi(13);
- 	segaScpi.errorscpi(14);
-	segaScpi.errorscpi(15);	 
-	segaScpi.errorscpi(16);	 	
+	segaScpi.errorscpi(6);
+	segaScpi.errorscpi(7);
+	segaScpi.errorscpi(8);
+	segaScpi.errorscpi(9);
+	segaScpi.errorscpi(10);
 }
 /****************************************************************
 	ComandoCOMANDO2 ó C2
